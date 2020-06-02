@@ -4,5 +4,5 @@ from cmd_handlers import UnknownCommandHandler
 from cmd_handlers import LoadImageCommand
 
 if __name__ == '__main__':
-    handler = LoadImageCommandHandler(None, None)
+    handler = LoadImageCommandHandler('/home/soliaris/temp/', None)
     run_bot(handler)
