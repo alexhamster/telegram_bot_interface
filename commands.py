@@ -26,7 +26,7 @@ class ICommand:
 class BaseCommand(ICommand):
 
     def __init__(self, input_bot, api_message):
-        super(BaseCommand, self).__init__()
+        super().__init__()
         self.input_source = input_bot  # bot that receive message
         self.sender_message = api_message  # message got from telegram api
         self.sender_info = self._select_sender_info(api_message)  # info about user that send request to bot
@@ -53,7 +53,7 @@ class BaseCommand(ICommand):
     def _select_command_str(api_message) -> list:
         # select command from api_message and put it to list
         if not isinstance(api_message.text, str):
-            raise TypeError('Cant select command text')
+            return ['/pass']
         command_str = api_message.text.split(' ')
         logger.debug('message string: ' + str(command_str))
         return command_str
@@ -63,3 +63,27 @@ class BaseCommand(ICommand):
 
     def execute(self, *args, **kwargs):  # send reply to user
         self.input_source.reply_to(self.sender_message, self.status)
+
+
+class LoadImageCommand(BaseCommand):
+    """
+        Command for loading image from telegram to local storage
+    """
+
+    def __init__(self, input_bot, api_message):
+        super().__init__(input_bot, api_message)
+
+    @staticmethod
+    def _load_file_from_server(bot, file_id):
+        try:
+            file = bot.get_file(file_id)
+            local_file = bot.download_file(file.file_path)
+        except Exception as e:
+            logger.warning('Cant download a file! ' + repr(e))
+            return None
+        return local_file
+
+    def get_content(self):  # download image from server
+        file_id = self.sender_message.photo[-1].file_id
+        self.content = self._load_file_from_server(self.input_source, file_id)
+        return self.content

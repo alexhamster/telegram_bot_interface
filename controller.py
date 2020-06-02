@@ -3,6 +3,7 @@ from telebot import apihelper  # for proxy support
 from config import *  # config file
 from loguru import logger  # for logging
 from commands import BaseCommand
+from commands import LoadImageCommand
 from cmd_handlers import *
 # # for transport commands to other proc
 
@@ -18,6 +19,13 @@ def start(message):
     HANDLERS_HEAD.handle(start_command)
 
 
+@BOT.message_handler(content_types=['photo'])
+def photo(message):  # handle photo from user
+    logger.info('Incoming photo from: ')
+    load_file = LoadImageCommand(BOT, message)
+    HANDLERS_HEAD.handle(load_file)
+
+
 def run_bot(start_handler):
     if not isinstance(start_handler, ICommandHandler):
         raise TypeError('run_bot() needs ICommandHandler object as a first param')
@@ -31,6 +39,7 @@ def run_bot(start_handler):
     global HANDLERS_HEAD
     HANDLERS_HEAD = start_handler
     BOT.polling()  # start bot handler loop
+
 
 
 

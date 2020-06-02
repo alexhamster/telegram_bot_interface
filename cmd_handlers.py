@@ -1,4 +1,5 @@
 from commands import ICommand
+from commands import LoadImageCommand
 from loguru import logger  # for logging
 from abc import *
 
@@ -41,3 +42,27 @@ class UnknownCommandHandler(ICommandHandler):
         command.execute()
 
 
+class LoadImageCommandHandler(UnknownCommandHandler):
+
+    def __init__(self, storage_path, db_session, next_handler=None):
+        super().__init__(next_handler)
+        self.db_session = db_session
+        self.storage_path = storage_path
+
+    def _save_to_local(self, storage_path, file):
+        logger.info('Saved to local')
+
+    def _write_record_to_db(self, session):
+        logger.info('Wrote to db')
+
+    def handle(self, command):
+        logger.info('type info: ' + command.content_info)
+        image = command.get_content()
+        if image is None:
+            command.status = 'Cant load file from telegram server'
+            command.execute()
+            return
+        self._save_to_local('./', image)
+        self._write_record_to_db(None)
+        command.status = 'File saved'
+        command.execute()
