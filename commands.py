@@ -87,3 +87,21 @@ class LoadImageCommand(BaseCommand):
         file_id = self.sender_message.photo[-1].file_id
         self.content = self._load_file_from_server(self.input_source, file_id)
         return self.content
+
+
+class RedirectImageToChannel(LoadImageCommand):
+    """
+    Command to redirect image from user to some channel
+    """
+
+    def __init__(self, input_bot, api_message, channel_id):
+        super().__init__(input_bot, api_message)
+        self.channel_id = channel_id
+
+    def get_content(self):
+        return None
+
+    def execute(self, *args, **kwargs):  # redirect message to chanel
+        file_id = self.sender_message.photo[-1].file_id
+        message = 'from %s via @%s' % (self.sender_info.first_name, self.input_source.get_me().username)
+        self.input_source.send_photo(self.channel_id, file_id, message)

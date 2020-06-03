@@ -4,6 +4,7 @@ from config import *  # config file
 from loguru import logger  # for logging
 from commands import BaseCommand
 from commands import LoadImageCommand
+from commands import RedirectImageToChannel
 from cmd_handlers import *
 # # for transport commands to other proc
 
@@ -19,11 +20,22 @@ def start(message):
     HANDLERS_HEAD.handle(start_command)
 
 
+@BOT.message_handler(commands=['t'])
+def start(message):
+    print(message)
+
+
+@BOT.channel_post_handler(commands=['/stat'])
+def channel(message):
+    BOT.reply_to(message, 'All OK')
+
+
 @BOT.message_handler(content_types=['photo'])
 def photo(message):  # handle photo from user
     logger.info('Incoming photo from: ')
-    load_file = LoadImageCommand(BOT, message)
-    HANDLERS_HEAD.handle(load_file)
+    chanel_id = -1001150073760
+    redirect = RedirectImageToChannel(BOT, message, chanel_id)
+    HANDLERS_HEAD.handle(redirect)
 
 
 def run_bot(start_handler):

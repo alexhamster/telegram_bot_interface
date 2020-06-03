@@ -63,7 +63,7 @@ class LoadImageCommandHandler(UnknownCommandHandler):
         logger.info('File saved to local storage')
 
 
-    def _write_record_to_db(self, session):
+    def _write_record_to_db(self, session, command):
         logger.info('Wrote to db')
 
     def handle(self, command):
@@ -78,10 +78,11 @@ class LoadImageCommandHandler(UnknownCommandHandler):
         logger.info('type info: ' + command.content_info)
         image = command.get_content()
         if image is None:
+            logger.warning('Command content is None, cant handle photo!')
             command.status = 'Cant load file from telegram server'
             command.execute()
             return
         self._save_to_local(self.storage_path, str(command.sender_message.date), image)
-        self._write_record_to_db(None)
+        self._write_record_to_db(None, None)
         command.status = 'File saved'
         command.execute()
