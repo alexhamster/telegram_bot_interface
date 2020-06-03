@@ -19,6 +19,9 @@ class ICommand:
     def get_content(self):  # return content like a file, image, sound and etc
         raise NotImplementedError
 
+    def abort(self, abort_message):  # return user abort message
+        raise NotImplementedError
+
     def execute(self, *args, **kwargs):  # send reply to user
         raise NotImplementedError
 
@@ -61,6 +64,11 @@ class BaseCommand(ICommand):
     def get_content(self):
         return self.command_str
 
+    def abort(self, abort_message):
+        if not isinstance(abort_message, str):
+            abort_message = 'Ops...'
+        self.input_source.reply_to(self.sender_message, abort_message)
+
     def execute(self, *args, **kwargs):  # send reply to user
         self.input_source.reply_to(self.sender_message, self.status)
 
@@ -82,6 +90,7 @@ class LoadImageCommand(BaseCommand):
             logger.warning('Cant download a file! ' + repr(e))
             return None
         return local_file
+
 
     def get_content(self):  # download image from server
         file_id = self.sender_message.photo[-1].file_id
@@ -105,3 +114,6 @@ class RedirectImageToChannel(LoadImageCommand):
         file_id = self.sender_message.photo[-1].file_id
         message = 'from %s via @%s' % (self.sender_info.first_name, self.input_source.get_me().username)
         self.input_source.send_photo(self.channel_id, file_id, message)
+        log_info = 'Image from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
+        logger.info(log_info)
+        self.input_source.reply_to(self.sender_message, 'Done!')
