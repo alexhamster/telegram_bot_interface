@@ -6,7 +6,9 @@ from sqlalchemy.orm import relationship, session, sessionmaker, scoped_session
 
 
 Base = declarative_base()
-
+engine = create_engine('sqlite:///tg_bot.db')
+session_factory = sessionmaker(bind=engine)
+Session = scoped_session(session_factory)
 
 class User(Base):
     __tablename__ = 'user'
@@ -23,5 +25,4 @@ def db_init():
 
 
 if __name__ == "__name__":
-    #db_init()
-    pass
+    db_init()

@@ -8,10 +8,6 @@ from orm_model import *
 
 def main():
     try:
-        engine = create_engine('sqlite:///tg_bot.db')
-        session_factory = sessionmaker(bind=engine)
-        Session = scoped_session(session_factory)
-
         end_point = UnknownCommandHandler()
         img_saver = LoadImageCommandHandler('/home/soliaris/temp/', Session, next_handler=end_point)
         validator = ValidationCommandHandler(Session, next_handler=img_saver)
@@ -24,3 +20,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
