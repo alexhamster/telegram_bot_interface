@@ -1,8 +1,8 @@
 from commands import ICommand
-from commands import LoadImageCommand
 from loguru import logger  # for logging
 from abc import *
 from orm_model import User
+from commands import Action  # it is enum, used in handlers for catching commands
 
 
 class ICommandHandler(metaclass=ABCMeta):
@@ -17,15 +17,12 @@ class ICommandHandler(metaclass=ABCMeta):
 
 class UnknownCommandHandler(ICommandHandler):
     """
-    Handle all unknown commands. Works with ICommand interface.
+    Handle all unknown commands. Works with ICommand interface. Dont redirect command to next handler
     """
 
-    def __init__(self, reply='Unknown command'):
+    def __init__(self):
         super().__init__()
-        if not isinstance(reply, str):
-            raise TypeError('reply must to be a string!')
-        self._reply_to_user = reply
-        self._next_handler = None
+        self._next_handler = None  # UnknownCommandHandler the end of the handlers chain, it cant have next handler
 
     def handle(self, command):
         if not isinstance(command, ICommand):
@@ -34,30 +31,19 @@ class UnknownCommandHandler(ICommandHandler):
             raise TypeError('Command cant be None')
 
         logger.info('Unknown command: ' + str(command.command_str))
-        command.status = self._reply_to_user
-        command.execute()
+        command.abort('Unknown command :/ Use /help')
 
 
-class LoadImageCommandHandler(UnknownCommandHandler):
+class RedirectFilesCommandHandler(UnknownCommandHandler):
+    """
+    Handle a redirection command. Change record about user, when command is handled.
+    Needs sqlalchemy session factory for working with DB.
+    """
 
-    def __init__(self, storage_path, SessionFactory, next_handler=None):
+    def __init__(self, SessionFactory, next_handler=None):
         super().__init__()
         self.SessionFactory = SessionFactory
-        self.storage_path = storage_path
         self._next_handler = next_handler
-
-    def _save_to_local(self, storage_path, file_name, file):
-        try:
-            with open(storage_path + file_name, 'wb') as new_file:
-                new_file.write(file)
-                new_file.close()
-        except Exception:
-            logger.warning('Cant save file to local storage')
-            return
-        logger.info('File saved to local storage')
-
-    def _write_record_to_db(self, session, command):
-        logger.info('Wrote to db')
 
     @property
     def next_handler(self):
@@ -69,7 +55,7 @@ class LoadImageCommandHandler(UnknownCommandHandler):
             raise RuntimeError('Next handler cant be the same handler')
         self._next_handler = value
 
-    def change_users_record(self, command):  # TODO put it in more appropriate handler
+    def change_users_record(self, command):
         """
         Change in db users post_count and recent_count. Add them +1
         """
@@ -90,22 +76,13 @@ class LoadImageCommandHandler(UnknownCommandHandler):
         if command is None:
             raise TypeError('Command cant be None')
 
-        if not command.sender_message.content_type == 'photo':
+        if not command.action == Action.REDIRECT_DOCUMENT:
             if not (self._next_handler is None):
                 self._next_handler.handle(command)
+                return
+            command.abort('Cant handle that request')
 
-        self.change_users_record(command)  # TODO put it in more appropriate handler
-
-        logger.info('type info: ' + command.content_info)
-        image = command.get_content()
-        if image is None:
-            logger.warning('Command content is None, cant handle photo!')
-            command.status = 'Cant load file from telegram server'
-            command.execute()
-            return
-        self._save_to_local(self.storage_path, str(command.sender_message.date), image)
-        self._write_record_to_db(None, None)
-        command.status = 'File saved'
+        self.change_users_record(command)
         command.execute()
 
 
@@ -177,6 +154,6 @@ class ValidationCommandHandler(UnknownCommandHandler):
             return
 
         if self.next_handler is None:
-            logger.warning('After ValidationCommandHandler next is none')
+            logger.warning('After ValidationCommandHandler next is None. Maybe an error?')
             return
         self.next_handler.handle(command)

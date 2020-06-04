@@ -3,7 +3,7 @@ from telebot import apihelper  # for proxy support
 from config import *  # config file
 from loguru import logger  # for logging
 from commands import BaseCommand
-from commands import LoadImageCommand
+from commands import RedirectDocumentToChannel
 from commands import RedirectImageToChannel
 from cmd_handlers import *
 from requests.exceptions import ProxyError
@@ -40,6 +40,13 @@ def photo(message):  # handle photo from user
     logger.info('Incoming photo from: ' + message.from_user.username)
     chanel_id = -1001150073760
     redirect = RedirectImageToChannel(BOT, message, chanel_id)
+    HANDLERS_HEAD.handle(redirect)
+
+@BOT.message_handler(content_types=['document'])
+def photo(message):  # handle photo from user
+    logger.info('Incoming document from: ' + message.from_user.username)
+    chanel_id = -1001150073760
+    redirect = RedirectDocumentToChannel(BOT, message, chanel_id)
     HANDLERS_HEAD.handle(redirect)
 
 

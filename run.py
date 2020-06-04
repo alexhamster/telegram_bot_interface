@@ -1,7 +1,7 @@
 from controller import *
 from asyncio import Queue
 from cmd_handlers import UnknownCommandHandler
-from cmd_handlers import LoadImageCommandHandler
+from cmd_handlers import RedirectFilesCommandHandler
 from cmd_handlers import ValidationCommandHandler
 from orm_model import *
 
@@ -24,7 +24,7 @@ def get_proxy():  # get proxy from proxybroker
     proxies = asyncio.Queue()
     broker = Broker(proxies)
     tasks = asyncio.gather(
-        broker.find(types=['HTTPS'], limit=1),
+        broker.find(types=['HTTPS'], limit=5),
         show(proxies))
 
     loop = asyncio.get_event_loop()
@@ -35,7 +35,7 @@ def main():
     global PROXY_LIST
     # init handler chain
     end_point = UnknownCommandHandler()
-    img_saver = LoadImageCommandHandler('/home/soliaris/temp/', Session, next_handler=end_point)
+    img_saver = RedirectFilesCommandHandler(Session, next_handler=end_point)
     validator = ValidationCommandHandler(Session, next_handler=img_saver)
     # starting proxy brod  force
     while True:
