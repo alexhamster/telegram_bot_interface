@@ -108,7 +108,7 @@ class RedirectImageToChannel(BaseCommand):
         self.input_source.send_photo(self.channel_id, file_id, message)
         log_info = 'image from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
         logger.info(log_info)
-        self.input_source.reply_to(self.sender_message, 'Done!')
+        self.input_source.reply_to(self.sender_message, 'Done! Now you can send gifs and links too :)')
 
 
 class RedirectDocumentToChannel(BaseCommand):
@@ -126,5 +126,24 @@ class RedirectDocumentToChannel(BaseCommand):
         message = 'from %s via @%s' % (self.sender_info.first_name, self.input_source.get_me().username)
         self.input_source.send_document(self.channel_id, file_id, message)
         log_info = 'document from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
+        logger.info(log_info)
+        self.input_source.reply_to(self.sender_message, 'Done!')
+
+
+class RedirectLinkToChannel(BaseCommand):
+    """
+    Command to redirect link from user to some channel
+    """
+
+    def __init__(self, input_bot, api_message, channel_id):
+        super().__init__(input_bot, api_message)
+        self.channel_id = channel_id
+        self.action = Action.REDIRECT_DOCUMENT
+
+    def execute(self, *args, **kwargs):
+        message = 'link below from %s via @%s' % (self.sender_info.first_name, self.input_source.get_me().username)
+        self.input_source.send_message(self.channel_id, message)
+        self.input_source.send_message(self.channel_id, self.sender_message.text)
+        log_info = 'Link from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
         logger.info(log_info)
         self.input_source.reply_to(self.sender_message, 'Done!')

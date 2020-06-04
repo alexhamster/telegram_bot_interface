@@ -4,6 +4,7 @@ from cmd_handlers import UnknownCommandHandler
 from cmd_handlers import RedirectFilesCommandHandler
 from cmd_handlers import ValidationCommandHandler
 from orm_model import *
+from time import sleep
 
 import asyncio
 from proxybroker import Broker
@@ -45,6 +46,7 @@ def main():
             if not (exit_code == -1):  # in case of unknown error(despite proxy error)
                 logger.critical('Crash for unknown reason...')
                 return
+
         get_proxy()  # if proxy list is empty get fresh proxy
 
 
