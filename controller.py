@@ -6,6 +6,8 @@ from commands import BaseCommand
 from commands import LoadImageCommand
 from commands import RedirectImageToChannel
 from cmd_handlers import *
+from requests.exceptions import ProxyError
+
 # # for transport commands to other proc
 
 BOT = telebot.TeleBot(TOKEN)
@@ -19,6 +21,7 @@ def start(message):
     start_message = 'Hello, i am bot for t.me/waifu_paradise chanel suggestions. Send me something you want to see in ' \
                     'the chanel. '
     BOT.reply_to(message, start_message)
+
 
 @BOT.message_handler(commands=['help'])
 def start(message):
@@ -40,20 +43,26 @@ def photo(message):  # handle photo from user
     HANDLERS_HEAD.handle(redirect)
 
 
-def run_bot(start_handler):
+def run_bot(start_handler, use_proxy=False, proxy_host='', proxy_port=''):
     if not isinstance(start_handler, ICommandHandler):
         raise TypeError('run_bot() needs ICommandHandler object as a first param')
 
     logger.info('Bot started.')
-    if USE_PROXY:
-        apihelper.proxy = {'https': 'https://%s:%s@%s:%s' % (PROXY_LOGIN,
-                                                             PROXY_PASS,
-                                                             PROXY_IP,
-                                                             PROXY_HTTP_PORT)}
-    global HANDLERS_HEAD
-    HANDLERS_HEAD = start_handler
-    BOT.polling()  # start bot handler loop
-
-
-
+    if use_proxy:
+        try:
+            apihelper.proxy = {'https': 'https://%s:%s' % (proxy_host,
+                                                           proxy_port)}
+        except ProxyError as e:
+            logger.warning('Invalid proxy %s:%s' % (proxy_host, proxy_port))
+            return -1
+    try:
+        global HANDLERS_HEAD
+        HANDLERS_HEAD = start_handler
+        BOT.polling()  # start bot handler loop
+    except ProxyError as pe:
+        logger.warning('Proxy %s:%s is dead... %s' % (proxy_host, proxy_port, repr(pe)))
+        return -1
+    except Exception as e:
+        logger.critical('Unknown error! %s' % repr(e))
+        return -2
 
