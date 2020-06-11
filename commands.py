@@ -108,7 +108,7 @@ class RedirectImageToChannel(BaseCommand):
         self.input_source.send_photo(self.channel_id, file_id, message)
         log_info = 'image from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
         logger.info(log_info)
-        self.input_source.reply_to(self.sender_message, 'Done! Now you can send gifs and links too :)')
+        self.input_source.reply_to(self.sender_message, 'Done!')
 
 
 class RedirectDocumentToChannel(BaseCommand):
@@ -124,7 +124,8 @@ class RedirectDocumentToChannel(BaseCommand):
     def execute(self, *args, **kwargs):
         file_id = self.sender_message.document.file_id
         message = 'from %s via @%s' % (self.sender_info.first_name, self.input_source.get_me().username)
-        self.input_source.send_document(self.channel_id, file_id, message)
+        self.input_source.send_text(self.channel_id, )
+        self.input_source.send_document(self.channel_id, file_id, caption=message)
         log_info = 'document from %s was redirected to %s' % (self.sender_info.username, self.channel_id)
         logger.info(log_info)
         self.input_source.reply_to(self.sender_message, 'Done!')

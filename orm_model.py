@@ -4,11 +4,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, session, sessionmaker, scoped_session
 
-
 Base = declarative_base()
 engine = create_engine('sqlite:///tg_bot.db')
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
+
 
 class User(Base):
     __tablename__ = 'user'

@@ -128,7 +128,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
             logger.warning('Cant read user status from db! ' + repr(e))
             return True
         if status[0] == 1:
-            logger.info('Status of %s if OK' % command.sender_info.username)
+            logger.info('Status of %s is OK' % command.sender_info.username)
             return False
         logger.warning('Request from %s was rejected cause of ban.' % command.sender_info.username)
         return True

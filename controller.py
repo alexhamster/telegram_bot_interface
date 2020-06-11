@@ -1,3 +1,8 @@
+"""
+In that file we handle requests from Telegram API. For different requests
+it makes concrete command objects from commands.py
+"""
+
 import telebot  # for bot api
 from telebot import apihelper  # for proxy support
 from config import *  # config file
@@ -9,55 +14,46 @@ from commands import RedirectLinkToChannel
 from cmd_handlers import *
 from requests.exceptions import ProxyError
 
-# # for transport commands to other proc
-
 BOT = telebot.TeleBot(TOKEN)
 logger.add("./logs/file_{time}.log")
-HANDLERS_HEAD = None
+HANDLERS_HEAD = None  # ref to first handler in the handlers chain
 
 
 @BOT.message_handler(commands=['start'])
 def start(message):
     logger.info('Incoming message: ' + message.text)
-    start_message = 'Hello, i am bot for t.me/waifu_paradise chanel suggestions. Send me something(images, gifs, ' \
-                    'links) you want to see in ' \
-                    'the chanel. '
-    BOT.reply_to(message, start_message)
+    BOT.reply_to(message, START_MESSAGE)
 
 
 @BOT.message_handler(commands=['help'])
 def start(message):
     logger.info('Incoming message: ' + message.text)
-    help_msg = 'Just send me anime ;) Image, gif or maybe link.'
-    BOT.reply_to(message, help_msg)
+    BOT.reply_to(message, HELP_MESSAGE)
 
 
 @BOT.channel_post_handler(commands=['stat'])
 def channel(message):
-    BOT.reply_to(message, 'All OK')
+    BOT.reply_to(message, 'All OK. Current chanel id:%s' % message.chat.id)
 
 
 @BOT.message_handler(content_types=['photo'])
 def photo(message):  # handle photo from user
     logger.info('Incoming photo from: ' + message.from_user.username)
-    chanel_id = -1001150073760
-    redirect = RedirectImageToChannel(BOT, message, chanel_id)
+    redirect = RedirectImageToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(content_types=['document'])
 def photo(message):  # handle photo from user
     logger.info('Incoming document from: ' + message.from_user.username)
-    chanel_id = -1001150073760
-    redirect = RedirectDocumentToChannel(BOT, message, chanel_id)
+    redirect = RedirectDocumentToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(regexp="http[s]*:\/\/[0-9a-z./A-Z@#!_-]*")
 def handle_message(message):
     logger.info('Incoming link from: ' + message.from_user.username)
-    chanel_id = -1001150073760
-    redirect = RedirectLinkToChannel(BOT, message, chanel_id)
+    redirect = RedirectLinkToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
