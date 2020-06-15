@@ -133,7 +133,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
         logger.warning('Request from %s was rejected cause of ban.' % command.sender_info.username)
         return True
 
-    def is_above_limit(self, command, limit=20) -> bool:
+    def is_above_limit(self, command, limit=30) -> bool:
         """
         Checking user resent post count and return True if count is above the limit
         """

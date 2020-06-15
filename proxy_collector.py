@@ -36,6 +36,6 @@ if __name__ == "__main__":
     broker = Broker(proxies, timeout=8)
     promise = asyncio.gather(broker.find(types=['HTTPS'], limit=100), get_stuff(proxies))
     loop = asyncio.get_event_loop()
-    crap, proxy_list = loop.run_until_complete(promise) # returns as many values, as many tasks we have
+    _, proxy_list = loop.run_until_complete(promise) # returns as many values, as many tasks we have
     write_to_file(proxy_list)
 

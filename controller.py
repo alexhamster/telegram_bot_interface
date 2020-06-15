@@ -33,6 +33,7 @@ def start(message):
 
 @BOT.channel_post_handler(commands=['stat'])
 def channel(message):
+    print(message)
     BOT.reply_to(message, 'All OK. Current chanel id:%s' % message.chat.id)
 
 
