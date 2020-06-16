@@ -39,3 +39,4 @@ if __name__ == "__main__":
     _, proxy_list = loop.run_until_complete(promise) # returns as many values, as many tasks we have
     write_to_file(proxy_list)
 
+# TODO Сделать проверку на None имен пользователя

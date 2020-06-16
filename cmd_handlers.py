@@ -146,7 +146,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
 
     def handle(self, command):
         if self.user_is_banned(command):
-            command.abort('You are was banned by an administrator of the bot')
+            command.abort('Error number 69, please write about it in https://t.me/waifuchat')
             return
 
         if self.is_above_limit(command):

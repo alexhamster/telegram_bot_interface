@@ -43,16 +43,26 @@ class BaseCommand(ICommand):
         self.content = api_message.text
         self.content_info = api_message.content_type
 
-    @staticmethod
-    def _select_sender_info(api_message) -> SenderInfo:
+    def replace_none(self, data):
+        if data is None:
+            return '404'
+        if isinstance(data, str):
+            data = data.lower()
+            if data in 'none':
+                return '404'
+            if data in 'null':
+                return '404'
+        return data
+
+    def _select_sender_info(self, api_message) -> SenderInfo:
         # Select sender info from message that got from api
         # like a user_id, char_id, username, time and etc...
-        info = SenderInfo(api_message.from_user.id,
-                          api_message.from_user.username,
-                          api_message.from_user.first_name,
-                          api_message.from_user.last_name,
-                          api_message.from_user.language_code,
-                          api_message.date)
+        info = SenderInfo(self.replace_none(api_message.from_user.id),
+                          self.replace_none(api_message.from_user.username),
+                          self.replace_none(api_message.from_user.first_name),
+                          self.replace_none(api_message.from_user.last_name),
+                          self.replace_none(api_message.from_user.language_code),
+                          self.replace_none(api_message.date))
 
         # logger.debug('Select user info', info)
         return info
