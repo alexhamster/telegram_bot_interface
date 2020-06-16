@@ -21,13 +21,13 @@ HANDLERS_HEAD = None  # ref to first handler in the handlers chain
 
 @BOT.message_handler(commands=['start'])
 def start(message):
-    logger.info('Incoming message: ' + message.text)
+    logger.info('Incoming message: ' + str(message))
     BOT.reply_to(message, START_MESSAGE)
 
 
 @BOT.message_handler(commands=['help'])
 def start(message):
-    logger.info('Incoming message: ' + message.text)
+    logger.info('Incoming message: ' + str(message))
     BOT.reply_to(message, HELP_MESSAGE)
 
 
@@ -39,23 +39,29 @@ def channel(message):
 
 @BOT.message_handler(content_types=['photo'])
 def photo(message):  # handle photo from user
-    logger.info('Incoming photo from: ' + message.from_user.username)
+    logger.info('Incoming photo from: ' + str(message))
     redirect = RedirectImageToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(content_types=['document'])
 def photo(message):  # handle photo from user
-    logger.info('Incoming document from: ' + message.from_user.username)
+    logger.info('Incoming document from: ' + str(message))
     redirect = RedirectDocumentToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(regexp="http[s]*:\/\/[0-9a-z./A-Z@#!_-]*")
 def handle_message(message):
-    logger.info('Incoming link from: ' + message.from_user.username)
+    logger.info('Incoming link from: ' + str(message))
     redirect = RedirectLinkToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
+
+
+@BOT.message_handler(func=lambda m: True)
+def echo_all(message):
+    logger.info('Unknown message ' + str(message))
+    BOT.reply_to(message, 'Cant handle this')
 
 
 def run_bot(start_handler, use_proxy=False, proxy_host='', proxy_port=''):
@@ -73,7 +79,7 @@ def run_bot(start_handler, use_proxy=False, proxy_host='', proxy_port=''):
     try:
         global HANDLERS_HEAD
         HANDLERS_HEAD = start_handler
-        BOT.polling()  # start bot handler loop
+        BOT.polling(timeout=5)  # start bot handler loop
     except Exception as pe:
         logger.warning('Proxy %s:%s is dead... %s' % (proxy_host, proxy_port, repr(pe)))
         return -1

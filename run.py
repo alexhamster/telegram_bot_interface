@@ -7,6 +7,8 @@ from orm_model import *
 from time import sleep
 import random
 
+import requests
+
 import asyncio
 from proxybroker import Broker
 
@@ -20,6 +22,20 @@ def load_proxy_list(path='./proxy'):
     return result
 
 
+def ping_proxy(host, port) -> bool:
+    if not (isinstance(host, str) and isinstance(port, str)):
+        return False
+    try:
+        s = requests.Session()
+        s.proxies = {'https': 'https://%s:%s' % (host, port)}
+        r = s.get('https://ya.ru', timeout=2)
+        s.close()
+    except Exception as e:
+        print(repr(e))
+        return False
+    else:
+        return True
+
 def main():
     proxy_list = load_proxy_list()
     random.seed()
@@ -30,12 +46,14 @@ def main():
     validator = ValidationCommandHandler(Session, next_handler=img_saver)
     # starting proxy brod  force
     for proxy in proxy_list:
+        if not ping_proxy(proxy[0], proxy[1]):
+            logger.warning('Invalid proxy %s:%s' % (proxy[0], proxy[1]))
+            continue
         logger.info('Using proxy %s:%s' % (proxy[0], proxy[1]))
         exit_code = run_bot(validator, use_proxy=True, proxy_host=proxy[0], proxy_port=proxy[1])
         if not (exit_code == -1):  # in case of unknown error(despite proxy error)
             logger.critical('Crash for unknown reason...')
             return
-        #logger.warning('Getting new proxy list')
         #proxy_list = load_proxy_list()  # if proxy list is empty get fresh proxy
 
 
