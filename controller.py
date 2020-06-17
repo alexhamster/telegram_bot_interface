@@ -14,7 +14,7 @@ from commands import RedirectLinkToChannel
 from cmd_handlers import *
 from requests.exceptions import ProxyError
 
-BOT = telebot.TeleBot(TOKEN)
+BOT = telebot.TeleBot(TOKEN, threaded=False)
 logger.add("./logs/file_{time}.log")
 HANDLERS_HEAD = None  # ref to first handler in the handlers chain
 
@@ -31,10 +31,11 @@ def start(message):
     BOT.reply_to(message, HELP_MESSAGE)
 
 
-@BOT.channel_post_handler(commands=['stat'])
+@BOT.channel_post_handler(commands=['init'])
 def channel(message):
     print(message)
-    BOT.reply_to(message, 'All OK. Current chanel id:%s' % message.chat.id)
+    OUT_CHANEL_ID = message.chat.id
+    BOT.reply_to(message, 'Admin channel inited! ID:%s' % OUT_CHANEL_ID)
 
 
 @BOT.message_handler(content_types=['photo'])

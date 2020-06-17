@@ -47,10 +47,13 @@ class BaseCommand(ICommand):
         if data is None:
             return '404'
         if isinstance(data, str):
-            data = data.lower()
-            if data in 'none':
+            try:
+                t_data = data.lower()
+            except Exception as e:
+                return data
+            if t_data in 'none':
                 return '404'
-            if data in 'null':
+            if t_data in 'null':
                 return '404'
         return data
 
