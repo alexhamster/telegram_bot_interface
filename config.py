@@ -7,5 +7,5 @@ OUT_CHANEL_ID = -1001150073760  # TODO менять автоматически!
 START_MESSAGE = 'Hello, i am bot for t.me/waifu_paradise chanel suggestions. Send me something(images, gifs, ' \
                 'links) you want to see in ' \
                 'the chanel. '
-HELP_MESSAGE = 'Just send me anime ;) Image, gif or maybe link.'
+HELP_MESSAGE = 'Just send me anime ;) Image, gif or maybe link. In case of errors write to https://t.me/waifuchat'
 

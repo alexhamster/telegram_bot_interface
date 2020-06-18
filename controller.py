@@ -19,15 +19,19 @@ logger.add("./logs/file_{time}.log")
 HANDLERS_HEAD = None  # ref to first handler in the handlers chain
 
 
+def get_short_info(message):
+    return ' From ' + str(message.from_user) + ' Message text: ' + str(message.text)
+
+
 @BOT.message_handler(commands=['start'])
 def start(message):
-    logger.info('Incoming message: ' + str(message))
+    logger.info('Incoming start message: %s' % get_short_info(message))
     BOT.reply_to(message, START_MESSAGE)
 
 
 @BOT.message_handler(commands=['help'])
 def start(message):
-    logger.info('Incoming message: ' + str(message))
+    logger.info('Incoming help message: %s' % get_short_info(message))
     BOT.reply_to(message, HELP_MESSAGE)
 
 
@@ -40,28 +44,28 @@ def channel(message):
 
 @BOT.message_handler(content_types=['photo'])
 def photo(message):  # handle photo from user
-    logger.info('Incoming photo from: ' + str(message))
+    logger.info('Incoming photo %s' % get_short_info(message))
     redirect = RedirectImageToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(content_types=['document'])
-def photo(message):  # handle photo from user
-    logger.info('Incoming document from: ' + str(message))
+def photo(message):  # handle document from user
+    logger.info('Incoming document %s' % get_short_info(message))
     redirect = RedirectDocumentToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(regexp="http[s]*:\/\/[0-9a-z./A-Z@#!_-]*")
 def handle_message(message):
-    logger.info('Incoming link from: ' + str(message))
+    logger.info('Incoming link %s' % get_short_info(message))
     redirect = RedirectLinkToChannel(BOT, message, OUT_CHANEL_ID)
     HANDLERS_HEAD.handle(redirect)
 
 
 @BOT.message_handler(func=lambda m: True)
 def echo_all(message):
-    logger.info('Unknown message ' + str(message))
+    logger.info('Unknown message %s' % get_short_info(message))
     BOT.reply_to(message, 'Cant handle this')
 
 

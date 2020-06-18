@@ -3,7 +3,7 @@ from loguru import logger  # for logging
 from abc import *
 from orm_model import User
 from commands import Action  # it is enum, used in handlers for catching commands
-
+import time
 
 class ICommandHandler(metaclass=ABCMeta):
     @abstractmethod
@@ -96,12 +96,15 @@ class ValidationCommandHandler(UnknownCommandHandler):
         super().__init__()
         self.next_handler = next_handler
         self.SessionFactory = SessionFactory
+        self.post_limit_for_user = 10  # limit for every user for posting
+        self.limit_time_interval_s = 60*30  # amount of time, when people can send
 
     def add_new_user(self, command):
         user_info = {
             'id': command.sender_info.id,
             'name': command.sender_info.first_name,
             'username': command.sender_info.username,
+            'when_started': time.time()
         }
         try:
             sess = self.SessionFactory()
@@ -133,15 +136,20 @@ class ValidationCommandHandler(UnknownCommandHandler):
         logger.warning('Request from %s was rejected cause of ban.' % command.sender_info.username)
         return True
 
-    def is_above_limit(self, command, limit=30) -> bool:
+    def is_above_limit(self, command, post_limit=10, time_interval_s=3600) -> bool:
         """
         Checking user resent post count and return True if count is above the limit
         """
         sess = self.SessionFactory()
-        recent_count = sess.query(User.recent_count).filter(User.id == command.sender_info.id).first()
-        if recent_count[0] > limit:
-            logger.warning('Above the limit, post from %s dropped' % command.sender_info.username)
-            return True
+        user = sess.query(User).filter(User.id == command.sender_info.id).first()
+        if user.recent_count >= post_limit:
+            if (time.time() - user.when_started) < time_interval_s:
+                logger.warning('Above the limit, post from %s dropped' % command.sender_info.username)
+                return True
+        if (time.time() - user.when_started) > time_interval_s:
+            user.recent_count = 0
+            user.when_started = time.time()
+        sess.commit()
         return False
 
     def handle(self, command):
@@ -149,8 +157,10 @@ class ValidationCommandHandler(UnknownCommandHandler):
             command.abort('Error number 69, please write about it in https://t.me/waifuchat')
             return
 
-        if self.is_above_limit(command):
-            command.abort('You reach your daily post limit for today, try tomorrow :)')
+        if self.is_above_limit(command, post_limit=self.post_limit_for_user, time_interval_s=self.limit_time_interval_s):
+            command.abort('Above the post limit! You can send %s posts every %s minute(s)' %
+                          (self.post_limit_for_user,
+                           round(self.limit_time_interval_s/60)))
             return
 
         if self.next_handler is None:
