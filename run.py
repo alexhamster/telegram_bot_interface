@@ -20,28 +20,33 @@ def load_proxy_list(path='./proxy'):
     return result
 
 
-def main(refresh_proxy_list=False):
-    if refresh_proxy_list:
-        get_proxy()
-    proxy_list = load_proxy_list()
+def main(use_proxy=False, refresh_proxy_list=False):
+
     # init handler chain
     end_point = UnknownCommandHandler()
     img_saver = RedirectFilesCommandHandler(Session, next_handler=end_point)
     validator = ValidationCommandHandler(Session, next_handler=img_saver)
     ban_unban = ChangeUserDataCommandHandler(Session, next_handler=validator)
+
     # starting proxy brod  force
-    for proxy in proxy_list:
-        logger.info('Using proxy %s:%s' % (proxy[0], proxy[1]))
-        exit_code = run_bot(ban_unban, use_proxy=True, proxy_host=proxy[0], proxy_port=proxy[1])
-        if not (exit_code == -1):  # in case of unknown error(despite proxy error)
-            logger.critical('Crash for unknown reason...')
-            return
+    if use_proxy:
+        if refresh_proxy_list:
+            get_proxy()
+        proxy_list = load_proxy_list()
+        for proxy in proxy_list:
+            logger.info('Using proxy %s:%s' % (proxy[0], proxy[1]))
+            exit_code = run_bot(ban_unban, use_proxy=use_proxy, proxy_host=proxy[0], proxy_port=proxy[1])
+            if not (exit_code == -1):  # in case of unknown error(despite proxy error)
+                logger.critical('Crash for unknown reason...')
+                return
+    else:
+        run_bot(ban_unban)
 
 
 if __name__ == '__main__':
     while True:
         logger.info('Starting new iteration of main')
         try:
-            main(refresh_proxy_list=True)
+            main(use_proxy=False, refresh_proxy_list=True)
         except Exception as e:
             logger.critical(repr(e))

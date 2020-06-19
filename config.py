@@ -18,7 +18,7 @@ HELP_MESSAGE = 'Just send me anime ;) Image, gif or maybe link. In case of error
 
 POST_LIMIT_MESSAGE = 'Above the post limit! You can send %s posts every %s minute(s)'
 
-BAN_MESSAGE = 'Error number 69, please write about it in https://t.me/waifuchat'
+BAN_MESSAGE = 'Error number 403, please write about it in https://t.me/waifuchat'
 
 UNKNOWN_COMMAND_MESSAGE = 'Cant handle that request'
 
