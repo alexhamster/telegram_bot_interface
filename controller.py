@@ -10,7 +10,7 @@ from loguru import logger  # for logging
 from commands import BaseCommand
 from commands import RedirectDocumentToChannel
 from commands import RedirectImageToChannel
-from commands import RedirectLinkToChannel
+from commands import RedirectLinkToChannel, BanOrUnbanUserCommand
 from cmd_handlers import *
 from requests.exceptions import ProxyError
 
@@ -39,7 +39,22 @@ def start(message):
 def channel(message):
     print(message)
     OUT_CHANEL_ID = message.chat.id
-    BOT.reply_to(message, 'Admin channel inited! ID:%s' % OUT_CHANEL_ID)
+    BOT.reply_to(message, 'Admin channel inited! ID:%s' % OUT_CHANEL_ID, disable_notification=True)
+
+
+@BOT.channel_post_handler(commands=['ban'])
+def channel(message):
+    try:
+        ban = BanOrUnbanUserCommand(BOT, message, OUT_CHANEL_ID, ban=True)
+        HANDLERS_HEAD.handle(ban)
+    except Exception as e:
+        print(repr(e))
+
+
+@BOT.channel_post_handler(commands=['unban'])
+def channel(message):
+    ban = BanOrUnbanUserCommand(BOT, message, OUT_CHANEL_ID, ban=False)
+    HANDLERS_HEAD.handle(ban)
 
 
 @BOT.message_handler(content_types=['photo'])
@@ -66,7 +81,7 @@ def handle_message(message):
 @BOT.message_handler(func=lambda m: True)
 def echo_all(message):
     logger.info('Unknown message %s' % get_short_info(message))
-    BOT.reply_to(message, 'Cant handle this')
+    BOT.reply_to(message, UNKNOWN_COMMAND_MESSAGE)
 
 
 def run_bot(start_handler, use_proxy=False, proxy_host='', proxy_port=''):

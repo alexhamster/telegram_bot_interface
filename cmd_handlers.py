@@ -4,6 +4,8 @@ from abc import *
 from orm_model import User
 from commands import Action  # it is enum, used in handlers for catching commands
 import time
+from config import *
+
 
 class ICommandHandler(metaclass=ABCMeta):
     @abstractmethod
@@ -17,33 +19,13 @@ class ICommandHandler(metaclass=ABCMeta):
 
 class UnknownCommandHandler(ICommandHandler):
     """
-    Handle all unknown commands. Works with ICommand interface. Dont redirect command to next handler
+    Handle all unknown commands. Works with ICommand interface.
     """
 
-    def __init__(self):
+    def __init__(self, SessionFactory=None, next_handler=None):
         super().__init__()
-        self._next_handler = None  # UnknownCommandHandler the end of the handlers chain, it cant have next handler
-
-    def handle(self, command):
-        if not isinstance(command, ICommand):
-            raise TypeError('UnknownCommandHandler can work only with ICommand interface from commands.py!')
-        if command is None:
-            raise TypeError('Command cant be None')
-
-        logger.info('Unknown command: ' + str(command.command_str))
-        command.abort('Unknown command :/ Use /help')
-
-
-class RedirectFilesCommandHandler(UnknownCommandHandler):
-    """
-    Handle a redirection command. Change record about user, when command is handled.
-    Needs sqlalchemy session factory for working with DB.
-    """
-
-    def __init__(self, SessionFactory, next_handler=None):
-        super().__init__()
-        self.SessionFactory = SessionFactory
         self._next_handler = next_handler
+        self.SessionFactory = SessionFactory
 
     @property
     def next_handler(self):
@@ -54,6 +36,64 @@ class RedirectFilesCommandHandler(UnknownCommandHandler):
         if value is self._next_handler:
             raise RuntimeError('Next handler cant be the same handler')
         self._next_handler = value
+
+    def handle(self, command):
+        if not isinstance(command, ICommand):
+            raise TypeError('UnknownCommandHandler can work only with ICommand interface from commands.py!')
+        if command is None:
+            raise TypeError('Command cant be None')
+
+        logger.info('Unknown command: ' + str(command.command_str))
+        command.abort(UNKNOWN_COMMAND_MESSAGE)
+
+
+class ChangeUserDataCommandHandler(UnknownCommandHandler):
+    """
+    Handle commands that changes user data in database
+    """
+
+    def __init__(self, SessionFactory, next_handler=None):
+        super().__init__(SessionFactory, next_handler)
+
+    def handle(self, command):
+        if not isinstance(command, ICommand):
+            raise TypeError('LoadImageCommandHandler can work only with ICommand interface from commands.py!')
+        if command is None:
+            raise TypeError('Command cant be None')
+
+        if not (command.action == Action.BAN_USER or command.action == Action.UNBAN_USER):
+            if not (self.next_handler is None):
+                self.next_handler.handle(command)
+                return
+            command.abort('Cant handle that request')
+
+        if command.sender_info.id is None:
+            command.abort('Selection of user id was unsuccessful')
+            return
+        try:
+            sess = self.SessionFactory()
+            if command.action == Action.BAN_USER:
+                sess.query(User.status).filter(User.id == command.sender_info.id).update({'status': 0})
+            if command.action == Action.UNBAN_USER:
+                sess.query(User.status).filter(User.id == command.sender_info.id).update({'status': 1})
+            sess.commit()
+            command.execute()
+            logger.warning('Users status was changed')
+        except Exception as e:
+            logger.warning('Cant change users status' + repr(e))
+            command.abort('Cant change status of that user')
+
+
+
+
+class RedirectFilesCommandHandler(UnknownCommandHandler):
+    """
+    Handle a redirection command. Change record about user, when command is handled.
+    Needs sqlalchemy session factory for working with DB.
+    """
+
+    def __init__(self, SessionFactory, next_handler=None):
+        super().__init__(SessionFactory, next_handler)
 
     def change_users_record(self, command):
         """
@@ -69,7 +109,6 @@ class RedirectFilesCommandHandler(UnknownCommandHandler):
         except Exception as e:
             logger.error('Cant update user status in db. Username: %s, Reason: %s' % (command.sender_info.username,
                                                                                       repr(e)))
-
     def handle(self, command):
         if not isinstance(command, ICommand):
             raise TypeError('LoadImageCommandHandler can work only with ICommand interface from commands.py!')
@@ -77,8 +116,8 @@ class RedirectFilesCommandHandler(UnknownCommandHandler):
             raise TypeError('Command cant be None')
 
         if not command.action == Action.REDIRECT_DOCUMENT:
-            if not (self._next_handler is None):
-                self._next_handler.handle(command)
+            if not (self.next_handler is None):
+                self.next_handler.handle(command)
                 return
             command.abort('Cant handle that request')
 
@@ -93,11 +132,9 @@ class ValidationCommandHandler(UnknownCommandHandler):
     """
 
     def __init__(self, SessionFactory, next_handler):
-        super().__init__()
-        self.next_handler = next_handler
-        self.SessionFactory = SessionFactory
-        self.post_limit_for_user = 10  # limit for every user for posting
-        self.limit_time_interval_s = 60*30  # amount of time, when people can send
+        super().__init__(SessionFactory, next_handler)
+        self.post_limit_for_user = MAXIMUM_POSTS_PER_TIME_INTERVAL  # limit for every user for posting
+        self.limit_time_interval_s = TIME_INTERVAL_S  # amount of time, when people can send
 
     def add_new_user(self, command):
         user_info = {
@@ -154,11 +191,11 @@ class ValidationCommandHandler(UnknownCommandHandler):
 
     def handle(self, command):
         if self.user_is_banned(command):
-            command.abort('Error number 69, please write about it in https://t.me/waifuchat')
+            command.abort(BAN_MESSAGE)
             return
 
         if self.is_above_limit(command, post_limit=self.post_limit_for_user, time_interval_s=self.limit_time_interval_s):
-            command.abort('Above the post limit! You can send %s posts every %s minute(s)' %
+            command.abort(POST_LIMIT_MESSAGE %
                           (self.post_limit_for_user,
                            round(self.limit_time_interval_s/60)))
             return

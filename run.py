@@ -1,8 +1,7 @@
 from controller import *
 from asyncio import Queue
 from cmd_handlers import UnknownCommandHandler
-from cmd_handlers import RedirectFilesCommandHandler
-from cmd_handlers import ValidationCommandHandler
+from cmd_handlers import ValidationCommandHandler, ChangeUserDataCommandHandler, RedirectFilesCommandHandler
 from orm_model import *
 from time import sleep
 import random
@@ -29,10 +28,11 @@ def main(refresh_proxy_list=False):
     end_point = UnknownCommandHandler()
     img_saver = RedirectFilesCommandHandler(Session, next_handler=end_point)
     validator = ValidationCommandHandler(Session, next_handler=img_saver)
+    ban_unban = ChangeUserDataCommandHandler(Session, next_handler=validator)
     # starting proxy brod  force
     for proxy in proxy_list:
         logger.info('Using proxy %s:%s' % (proxy[0], proxy[1]))
-        exit_code = run_bot(validator, use_proxy=True, proxy_host=proxy[0], proxy_port=proxy[1])
+        exit_code = run_bot(ban_unban, use_proxy=True, proxy_host=proxy[0], proxy_port=proxy[1])
         if not (exit_code == -1):  # in case of unknown error(despite proxy error)
             logger.critical('Crash for unknown reason...')
             return
