@@ -1,9 +1,16 @@
-from commands import ICommand
-from loguru import logger  # for logging
-from abc import *
-from orm_model import User
-from commands import Action  # it is enum, used in handlers for catching commands
+"""
+There ara command handler that contain main logic of the bot. Command handlers works with ICommand interface from
+commands.py.
+Handlers organized like a chain(unidirectional linked list). Command get from head to tail.
+https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern
+https://en.wikipedia.org/wiki/Command_pattern
+"""
+from abc import ABCMeta, abstractmethod
 import time
+from loguru import logger
+from commands import ICommand
+from orm_model import User
+from commands import ActionEnum  # used in handlers for catching commands
 from config import *
 
 
@@ -22,10 +29,10 @@ class UnknownCommandHandler(ICommandHandler):
     Handle all unknown commands. Works with ICommand interface.
     """
 
-    def __init__(self, SessionFactory=None, next_handler=None):
+    def __init__(self, db_session_class=None, next_handler=None):
         super().__init__()
         self._next_handler = next_handler
-        self.SessionFactory = SessionFactory
+        self.db_session_class = db_session_class
 
     @property
     def next_handler(self):
@@ -52,8 +59,8 @@ class ChangeUserDataCommandHandler(UnknownCommandHandler):
     Handle commands that changes user data in database
     """
 
-    def __init__(self, SessionFactory, next_handler=None):
-        super().__init__(SessionFactory, next_handler)
+    def __init__(self, db_session_class, next_handler=None):
+        super().__init__(db_session_class, next_handler)
 
     def handle(self, command):
         if not isinstance(command, ICommand):
@@ -61,7 +68,7 @@ class ChangeUserDataCommandHandler(UnknownCommandHandler):
         if command is None:
             raise TypeError('Command cant be None')
 
-        if not (command.action == Action.BAN_USER or command.action == Action.UNBAN_USER):
+        if not (command.action == ActionEnum.BAN_USER or command.action == ActionEnum.UNBAN_USER):
             if not (self.next_handler is None):
                 self.next_handler.handle(command)
                 return
@@ -71,10 +78,10 @@ class ChangeUserDataCommandHandler(UnknownCommandHandler):
             command.abort('Selection of user id was unsuccessful')
             return
         try:
-            sess = self.SessionFactory()
-            if command.action == Action.BAN_USER:
+            sess = self.db_session_class()
+            if command.action == ActionEnum.BAN_USER:
                 sess.query(User.status).filter(User.id == command.sender_info.id).update({'status': 0})
-            if command.action == Action.UNBAN_USER:
+            if command.action == ActionEnum.UNBAN_USER:
                 sess.query(User.status).filter(User.id == command.sender_info.id).update({'status': 1})
             sess.commit()
             command.execute()
@@ -84,23 +91,21 @@ class ChangeUserDataCommandHandler(UnknownCommandHandler):
             command.abort('Cant change status of that user')
 
 
-
-
 class RedirectFilesCommandHandler(UnknownCommandHandler):
     """
     Handle a redirection command. Change record about user, when command is handled.
     Needs sqlalchemy session factory for working with DB.
     """
 
-    def __init__(self, SessionFactory, next_handler=None):
-        super().__init__(SessionFactory, next_handler)
+    def __init__(self, db_session_class, next_handler=None):
+        super().__init__(db_session_class, next_handler)
 
     def change_users_record(self, command):
         """
         Change in db users post_count and recent_count. Add them +1
         """
         try:
-            sess = self.SessionFactory()
+            sess = self.db_session_class()
             sess.query(User.post_count, User.recent_count). \
                 filter(User.id == command.sender_info.id). \
                 update({"post_count": (User.post_count + 1),
@@ -109,13 +114,14 @@ class RedirectFilesCommandHandler(UnknownCommandHandler):
         except Exception as e:
             logger.error('Cant update user status in db. Username: %s, Reason: %s' % (command.sender_info.username,
                                                                                       repr(e)))
+
     def handle(self, command):
         if not isinstance(command, ICommand):
             raise TypeError('LoadImageCommandHandler can work only with ICommand interface from commands.py!')
         if command is None:
             raise TypeError('Command cant be None')
 
-        if not command.action == Action.REDIRECT_DOCUMENT:
+        if not command.action == ActionEnum.REDIRECT_DOCUMENT:
             if not (self.next_handler is None):
                 self.next_handler.handle(command)
                 return
@@ -131,8 +137,8 @@ class ValidationCommandHandler(UnknownCommandHandler):
     It checks in the DB user status and count of resent images.
     """
 
-    def __init__(self, SessionFactory, next_handler):
-        super().__init__(SessionFactory, next_handler)
+    def __init__(self, db_session_class, next_handler):
+        super().__init__(db_session_class, next_handler)
         self.post_limit_for_user = MAXIMUM_POSTS_PER_TIME_INTERVAL  # limit for every user for posting
         self.limit_time_interval_s = TIME_INTERVAL_S  # amount of time, when people can send
 
@@ -144,7 +150,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
             'when_started': time.time()
         }
         try:
-            sess = self.SessionFactory()
+            sess = self.db_session_class()
             sess.add(User(**user_info))
             sess.commit()
         except Exception as e:
@@ -157,7 +163,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
         If there is no user in database it will create it
         """
         status = 0
-        sess = self.SessionFactory()
+        sess = self.db_session_class()
         try:
             status = sess.query(User.status).filter(User.id == command.sender_info.id).first()
             if status is None:
@@ -177,7 +183,7 @@ class ValidationCommandHandler(UnknownCommandHandler):
         """
         Checking user resent post count and return True if count is above the limit
         """
-        sess = self.SessionFactory()
+        sess = self.db_session_class()
         user = sess.query(User).filter(User.id == command.sender_info.id).first()
         if user.recent_count >= post_limit:
             if (time.time() - user.when_started) < time_interval_s:
@@ -194,10 +200,11 @@ class ValidationCommandHandler(UnknownCommandHandler):
             command.abort(BAN_MESSAGE)
             return
 
-        if self.is_above_limit(command, post_limit=self.post_limit_for_user, time_interval_s=self.limit_time_interval_s):
+        if self.is_above_limit(command, post_limit=self.post_limit_for_user,
+                               time_interval_s=self.limit_time_interval_s):
             command.abort(POST_LIMIT_MESSAGE %
                           (self.post_limit_for_user,
-                           round(self.limit_time_interval_s/60)))
+                           round(self.limit_time_interval_s / 60)))
             return
 
         if self.next_handler is None:

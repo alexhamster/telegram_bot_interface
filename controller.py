@@ -3,16 +3,13 @@ In that file we handle requests from Telegram API. For different requests
 it makes concrete command objects from commands.py
 """
 
+from requests.exceptions import ProxyError
+from loguru import logger  # for logging
 import telebot  # for bot api
 from telebot import apihelper  # for proxy support
 from config import *  # config file
-from loguru import logger  # for logging
-from commands import BaseCommand
-from commands import RedirectDocumentToChannel
-from commands import RedirectImageToChannel
-from commands import RedirectLinkToChannel, BanOrUnbanUserCommand
-from cmd_handlers import *
-from requests.exceptions import ProxyError
+from commands import *  # command classes
+from cmd_handlers import ICommandHandler
 
 BOT = telebot.TeleBot(TOKEN, threaded=False)
 logger.add("./logs/file_{time}.log")

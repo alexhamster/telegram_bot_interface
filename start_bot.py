@@ -1,4 +1,7 @@
-#!/usr/bin/python3
+"""
+DEPRECATED: run ./run.py instead
+There is code to restart bot process in case of critical error.
+"""
 import time
 import subprocess
 import datetime

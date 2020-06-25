@@ -1,3 +1,8 @@
+"""
+There are commands classes. They contain logic to interact with TelegramAPI.
+All new command classes must inherit ICommand interface to work with cmd handlers in cmd_handler.py
+https://en.wikipedia.org/wiki/Command_pattern
+"""
 from collections import namedtuple
 from loguru import logger
 from enum import Enum
@@ -6,7 +11,8 @@ SenderInfo = namedtuple('SenderInfo', ['id', 'username', 'first_name', 'last_nam
                                        'language_code', 'date'])
 
 
-class Action(Enum):
+# Enum to defile available command actions
+class ActionEnum(Enum):
     DO_NOTHING = 0
     REDIRECT_DOCUMENT = 1
     LOAD_DOCUMENT = 2
@@ -15,14 +21,17 @@ class Action(Enum):
 
 
 class ICommand:
+    """
+    Command interface to work with cmd handlers in cmd_handler.py.
+    Contain the necessary information about user and his request
+    """
 
     def __init__(self):
-        self.sender_info = None
-        self.sender_message = None
-        self.content = None
-        self.content_info = None
-        self.action = None
-        self.input_source = None
+        self.sender_info = None  # info about user that send request to bot
+        self.sender_message = None  # message gotten from telegram api
+        self.content = None  # some content (file, image, audio and etc) from user
+        self.action = None  # Handlers handle commands depends on theirs actions
+        self.input_source = None  # bot that receive message
 
     def get_content(self):  # return content like a file, image, sound and etc
         raise NotImplementedError
@@ -35,18 +44,21 @@ class ICommand:
 
 
 class BaseCommand(ICommand):
+    """
+    Base command with no content. Define base methods to select general info from TelegramAPI response message
+    """
 
-    def __init__(self, input_bot, api_message, channel_id, action=Action.DO_NOTHING):
+    def __init__(self, input_bot, api_message, channel_id, action=ActionEnum.DO_NOTHING):
         super().__init__()
-        self.input_source = input_bot  # bot that receive message
-        self.sender_message = api_message  # message got from telegram api
-        self.sender_info = self._select_sender_info(api_message)  # info about user that send request to bot
-        self.action = action  # flag for handlers
+        self.input_source = input_bot
+        self.sender_message = api_message
+        self.sender_info = self._select_sender_info(api_message)
+        self.action = action
         self.content = api_message.text
-        self.content_info = api_message.content_type
         self.channel_id = channel_id  # admin channel telegram id
 
     def replace_none(self, data):
+        # function to replace empty user fields to default values
         if data is None:
             return '404'
         if isinstance(data, str):
@@ -69,7 +81,7 @@ class BaseCommand(ICommand):
                               self.replace_none(api_message.from_user.first_name),
                               self.replace_none(api_message.from_user.last_name),
                               self.replace_none(api_message.from_user.language_code),
-                            self.replace_none(api_message.date))
+                              self.replace_none(api_message.date))
         except Exception as e:
             logger.warning('Cant select user info!')
             return None
@@ -93,10 +105,11 @@ class LoadImageCommand(BaseCommand):
 
     def __init__(self, input_bot, api_message, channel_id):
         super().__init__(input_bot, api_message, channel_id)
-        self.action = Action.LOAD_DOCUMENT
+        self.action = ActionEnum.LOAD_DOCUMENT
 
     @staticmethod
     def _load_file_from_server(bot, file_id):
+        # loads file from telegram server
         try:
             file = bot.get_file(file_id)
             local_file = bot.download_file(file.file_path)
@@ -105,7 +118,7 @@ class LoadImageCommand(BaseCommand):
             return None
         return local_file
 
-    def get_content(self):  # download image from server
+    def get_content(self):
         file_id = self.sender_message.photo[-1].file_id
         self.content = self._load_file_from_server(self.input_source, file_id)
         return self.content
@@ -118,7 +131,7 @@ class RedirectImageToChannel(BaseCommand):
 
     def __init__(self, input_bot, api_message, channel_id):
         super().__init__(input_bot, api_message, channel_id)
-        self.action = Action.REDIRECT_DOCUMENT
+        self.action = ActionEnum.REDIRECT_DOCUMENT
 
     def execute(self, *args, **kwargs):
         file_id = self.sender_message.photo[-1].file_id
@@ -137,7 +150,7 @@ class RedirectDocumentToChannel(BaseCommand):
 
     def __init__(self, input_bot, api_message, channel_id):
         super().__init__(input_bot, api_message, channel_id)
-        self.action = Action.REDIRECT_DOCUMENT
+        self.action = ActionEnum.REDIRECT_DOCUMENT
 
     def execute(self, *args, **kwargs):
         file_id = self.sender_message.document.file_id
@@ -156,7 +169,7 @@ class RedirectLinkToChannel(BaseCommand):
 
     def __init__(self, input_bot, api_message, channel_id):
         super().__init__(input_bot, api_message, channel_id)
-        self.action = Action.REDIRECT_DOCUMENT
+        self.action = ActionEnum.REDIRECT_DOCUMENT
 
     def execute(self, *args, **kwargs):
         self.input_source.send_message(self.channel_id, self.sender_info.id)
@@ -168,14 +181,15 @@ class RedirectLinkToChannel(BaseCommand):
 
 class BanOrUnbanUserCommand(BaseCommand):
     """
-    That command select from text user id that will be banned
+    That command select from endpoint channel text a user_id.
     """
+
     def __init__(self, input_bot, api_message, channel_id, ban=True):
         super().__init__(input_bot, api_message, channel_id)
         if ban:
-            self.action = Action.BAN_USER
+            self.action = ActionEnum.BAN_USER
         else:
-            self.action = Action.UNBAN_USER
+            self.action = ActionEnum.UNBAN_USER
         self.sender_info = SenderInfo(self.select_user_id_from_message(api_message.reply_to_message.text),
                                       None, None, None, None, None)
 
@@ -189,7 +203,7 @@ class BanOrUnbanUserCommand(BaseCommand):
         return user_id
 
     def execute(self, *args, **kwargs):
-        if self.action == Action.BAN_USER:
+        if self.action == ActionEnum.BAN_USER:
             self.input_source.reply_to(self.sender_message, 'User with id: %s was banned!' % self.sender_info.id,
                                        disable_notification=True)
         else:

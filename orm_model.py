@@ -1,11 +1,15 @@
+"""
+Here described orm model User using SQLAlchemy (https://www.sqlalchemy.org/)
+The bot contains information about users. It provides options to collect statistic and prevent spam.
+"""
 from sqlalchemy import create_engine, ForeignKey
-import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import relationship, session, sessionmaker, scoped_session
+from config import DATABASE
 
 Base = declarative_base()
-engine = create_engine('sqlite:///tg_bot.db')
+engine = create_engine(DATABASE)
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
 
@@ -22,9 +26,13 @@ class User(Base):
 
 
 def db_init():
-    print('Clear db inited!')
-    Base.metadata.create_all(engine)  # create tables, use ONE TIME
+    try:
+        Base.metadata.create_all(engine)
+        print('Clear db inited!')
+    except Exception as e:
+        print('db init error!' + repr(e))
 
 
+# Use it for ONE time to create db
 if __name__ == "__main__":
     db_init()

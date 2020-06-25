@@ -1,17 +1,15 @@
+"""
+There are functions to make proxy file using proxybroker(https://github.com/constverum/ProxyBroker).
+Bot can use file 'proxy' to get access to TelegramAPI in case of government blocking
+"""
 import asyncio
-import random
-
 import aiohttp
+import random
+import requests
+from pathlib import Path
+from proxybroker import Broker
 from proxybroker.resolver import Resolver
 from proxybroker.utils import log
-
-import asyncio
-from proxybroker import Broker
-from pathlib import Path
-import requests
-"""
-Generate a file(./proxy) with a lot of proxy
-"""
 
 
 async def get_stuff(proxies: asyncio.Queue):
@@ -27,6 +25,7 @@ async def get_stuff(proxies: asyncio.Queue):
 
 
 def ping_proxy(host, port) -> bool:
+    # Check proxy with ping https://telegram.org
     if not (isinstance(host, str) and isinstance(port, str)):
         return False
     try:
@@ -67,6 +66,6 @@ def get_proxy():
     write_to_file(proxy_list)
 
 
+# To get new proxy file just run using console
 if __name__ == "__main__":
     get_proxy()
-
