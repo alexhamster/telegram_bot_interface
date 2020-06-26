@@ -55,6 +55,9 @@ if __name__ == '__main__':
         except Exception as e:
             logger.critical(repr(e))
 ```
+## Usage
+[Overview](https://media1.giphy.com/media/KHiVctel8gN3woiypX/giphy.gif)                                  
+[How to ban](https://media2.giphy.com/media/Qvv5wVE1RXp2soggf2/giphy.gif)
 
 ## TODO
 * Multiprocessing
