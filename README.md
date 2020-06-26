@@ -28,7 +28,7 @@ $ python3 ./orm_model.py
 ```python
 TOKEN = '123456789:FORE_EXAMPLE_hqzNIrx6hXTG5pMmCx00uh3w'
 ```
-Now you need to get your channel id. Bot will send all from users to it.
+Now you need to get your channel id. Bot will send all from users to it.                                
 6. In bot directory execute:
 ```bash
 $ python3 ./run.py
@@ -45,7 +45,7 @@ $ python3 ./run.py
 ```
 In case of no errors bot will redirect content (images, gifs, links) to your channel.
 ## Using proxy
-To enable working through in **run.py** call main() like that:
+To enable working through proxy in **run.py** call main() like that:
 ```python
 if __name__ == '__main__':
     while True:
