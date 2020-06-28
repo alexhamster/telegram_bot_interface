@@ -8,9 +8,9 @@ https://en.wikipedia.org/wiki/Command_pattern
 from abc import ABCMeta, abstractmethod
 import time
 from loguru import logger
-from commands import ICommand
-from orm_model import User
-from commands import ActionEnum  # used in handlers for catching commands
+from .commands import ICommand
+from bot_orm.orm_model import User
+from .commands import ActionEnum  # used in handlers for catching commands
 from config import *
 
 

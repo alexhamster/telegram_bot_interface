@@ -2,10 +2,11 @@
 This is the entry point of the bot. main() init the chain of the command handlers
 """
 from loguru import logger
-from controller import run_bot
-from cmd_handlers import ValidationCommandHandler, ChangeUserDataCommandHandler
-from cmd_handlers import RedirectFilesCommandHandler, UnknownCommandHandler
-from orm_model import Session
+from bot_interface.controller import run_bot
+from bot_logic.cmd_handlers import ValidationCommandHandler, ChangeUserDataCommandHandler
+from bot_logic.cmd_handlers import RedirectFilesCommandHandler, UnknownCommandHandler
+from sqlalchemy.orm import sessionmaker, scoped_session
+from bot_orm.orm_model import engine
 
 
 def load_proxy_list(path='./proxy'):
@@ -18,6 +19,9 @@ def load_proxy_list(path='./proxy'):
 
 
 def init_handler_chain():
+    session_factory = sessionmaker(bind=engine)
+    Session = scoped_session(session_factory)
+
     # last handler that drops unknown commands
     end_point = UnknownCommandHandler()
     # redirect files from commands to the endpoint channel. Used database to contain statistic
@@ -37,7 +41,6 @@ def main(use_proxy=False, refresh_proxy_list=False):
     :return: In case of unknown error will return None
     """
     first_handler = init_handler_chain()
-
     # starting proxy brod  force
     if use_proxy:
         from proxy_collector import get_proxy

@@ -9,9 +9,6 @@ TOKEN = ''  # Use telegram father bot to get that token
 # To find out OUT_CHANEL_ID add a bot to your channel and write '/init'. Then copy an id and paste it below
 OUT_CHANEL_ID = -1
 
-
-DATABASE = 'sqlite:///tg_bot.db'  # WARNING, there is no guarantee about working with other databases
-
 # ===MESSAGE_PACK===
 # This is message pack, that bot will send to users depends on their actions
 
@@ -33,5 +30,4 @@ SUCCESS_MESSAGE = 'Done!'
 
 MAXIMUM_POSTS_PER_TIME_INTERVAL = 10  # How many content posts from user will handle bot during one time interval
 
-TIME_INTERVAL_S = 60*30  # Duration of one time interval in seconds
-
+TIME_INTERVAL_S = 60 * 30  # Duration of one time interval in seconds

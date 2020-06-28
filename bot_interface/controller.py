@@ -5,13 +5,13 @@ it makes concrete command objects from commands.py
 
 from requests.exceptions import ProxyError
 from loguru import logger  # for logging
-import telebot  # for bot api
+from telebot import TeleBot  # for bot api
 from telebot import apihelper  # for proxy support
-from config import *  # config file
-from commands import *  # command classes
-from cmd_handlers import ICommandHandler
+from config import *
+from bot_logic.commands import *  # command classes
+from bot_logic.cmd_handlers import ICommandHandler
 
-BOT = telebot.TeleBot(TOKEN, threaded=False)
+BOT = TeleBot(TOKEN, threaded=False)
 logger.add("./logs/file_{time}.log")
 HANDLERS_HEAD = None  # ref to first handler in the handlers chain
 
@@ -35,8 +35,7 @@ def start(message):
 @BOT.channel_post_handler(commands=['init'])
 def channel(message):
     print(message)
-    OUT_CHANEL_ID = message.chat.id
-    BOT.reply_to(message, 'Admin channel inited! ID:%s' % OUT_CHANEL_ID, disable_notification=True)
+    BOT.reply_to(message, 'Admin channel ID:%s' % OUT_CHANEL_ID, disable_notification=True)
 
 
 @BOT.channel_post_handler(commands=['ban'])

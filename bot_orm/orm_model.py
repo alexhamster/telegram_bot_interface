@@ -6,12 +6,9 @@ from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import relationship, session, sessionmaker, scoped_session
-from config import DATABASE
 
 Base = declarative_base()
-engine = create_engine(DATABASE)
-session_factory = sessionmaker(bind=engine)
-Session = scoped_session(session_factory)
+engine = create_engine('sqlite:///bot_orm/tg_bot.db')
 
 
 class User(Base):
@@ -27,7 +24,7 @@ class User(Base):
 
 def db_init():
     try:
-        Base.metadata.create_all(engine)
+        Base.metadata.create_all(create_engine('sqlite:///tg_bot.db'))  # TODO refactoring
         print('Clear db inited!')
     except Exception as e:
         print('db init error!' + repr(e))
