@@ -20,9 +20,9 @@ pip3 install proxybroker
 1. Get bot token from [BotFather](https://telegram.me/BotFather)
 2. In [BotFather](https://telegram.me/BotFather) write **/setjoingroups** and select **Enable**  
 3. Create private channel and add bot as administrator
-4. Init bot database(SQLite3): in bot directory execute: 
+4. Init bot database(SQLite3): in bot root directory execute: 
 ```bash
-$ python3 ./orm_model.py
+$ python3 ./bot_orm/orm_model.py
 ```
 5. Open **config.py** and paste **your** token from BotFather to *TOKEN*
 ```python
@@ -34,7 +34,7 @@ Now you need to get your channel id. Bot will send all from users to it.
 $ python3 ./run.py
 ```
 7. In your telegram channel write command < **/init** >
-, if all ok bot send id of your channel. For example: "Admin channel inited! ID: **-1234567890**"
+, if all ok bot send id of your channel. For example: "Admin channel ID: **-1234567890**"
 8.  Open **config.py** and paste the channel id to *OUT_CHANEL_ID*
 ```python
 OUT_CHANEL_ID = -1234567890
